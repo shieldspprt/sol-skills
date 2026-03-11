@@ -1,0 +1,46 @@
+{
+  "slug": "manifest",
+  "title": "Manifest DEX",
+  "summary": "Build and integrate Manifest DEX on Solana using the Manifest SDK.",
+  "level": "advanced",
+  "tags": [
+    "dex",
+    "orderbook",
+    "trading",
+    "sdk",
+    "frontend"
+  ],
+  "author": "bonasa-tech",
+  "repository": "sendaifun/skills",
+  "links": [
+    {
+      "label": "Source folder",
+      "href": "https://github.com/sendaifun/skills/tree/main/skills/manifest"
+    },
+    {
+      "label": "Source skill",
+      "href": "https://raw.githubusercontent.com/sendaifun/skills/main/skills/manifest/SKILL.md"
+    }
+  ],
+  "guide": {
+    "markdown": "# Manifest DEX Integration Guide\n\nBuild trading, routing, portfolio, and frontend integrations on top of Manifest's permissionless orderbook.\n\n## Overview\n\nUse this skill when the task involves:\n\n- Reading Manifest market state or orderbooks\n- Placing, canceling, depositing, or withdrawing via the Manifest SDK\n- Choosing between local market balances and global balances\n- Handling wrapper setup, seat claims, and wallet-adapter flows\n- Understanding `Limit`, `PostOnly`, `ImmediateOrCancel`, `Global`, `Reverse`, and `ReverseTight` order types\n\nLoad supporting references as needed:\n\n- `resources/manifest-actions.md`\n- `resources/manifest-sdk.md`\n- `docs/troubleshooting.md`\n- `examples/read-market/read-market.ts`\n- `examples/wallet-order/place-order.ts`\n- `examples/global-liquidity/global-order.ts`\n- `examples/reverse-liquidity/amm-style-batch.ts`\n- `templates/manifest-setup.ts`\n\n## Instructions\n\n1. Determine whether the task is read-only market access or transaction-building.\n2. For read-only access, prefer `Market` reads or `ManifestClient.getClientReadOnly(...)`.\n3. For transaction-building, use `getClientForMarket(...)` for signer-controlled flows, or use `getSetupIxs(...)` first and then `getClientForMarketNoPrivateKey(...)` for wallet-adapter flows.\n4. Decide whether liquidity should be market-local (wrapper balances plus a market seat) or global (global account plus `OrderType.Global`).\n5. If the task involves recurring two-sided liquidity, evaluate `Reverse` or `ReverseTight` instead of ordinary limit orders.\n6. For UI/orderbook work, prefer `bidsL2()` and `asksL2()` for display-ready levels.\n7. When documenting or implementing cleanup behavior, distinguish wrapper-level cancels from core-level cancels. `cancelAllIx()` does not fully cover all reverse/global edge cases; `cancelAllOnCoreIx()` is the stronger cleanup path.\n8. State assumptions explicitly:\n- cluster\n- market address\n- trader/signer model\n- whether wrapper/global setup already exists\n\n## Examples\n\n### Basic Usage\n\nWhen user asks: \"Show the best bid and ask on a Manifest market\"\n\nThe agent should:\n1. Use `Market.loadFromAddress(...)` or `ManifestClient.getClientReadOnly(...)`\n2. Read `bestBidPrice()` and `bestAskPrice()` or `bidsL2()` / `asksL2()`\n3. Return prices without introducing signing or setup logic\n\n### Wallet Trading Flow\n\nWhen user asks: \"Place a Manifest order from a browser wallet\"\n\nThe agent should:\n1. Call `ManifestClient.getSetupIxs(...)`\n2. If setup is needed, create wrapper state and/or claim the seat first\n3. Then use `ManifestClient.getClientForMarketNoPrivateKey(...)`\n4. Build the order instruction with `client.placeOrderIx(...)`\n\n### Global Liquidity Flow\n\nWhen user asks: \"Use the same capital across multiple Manifest markets\"\n\nThe agent should:\n1. Explain that market-local balances are insufficient for this requirement\n2. Use global-account setup with `createGlobalAddTraderIx(...)`\n3. Deposit via `globalDepositIx(...)`\n4. Place `OrderType.Global` orders\n\n### Reverse Orders\n\nWhen user asks: \"Provide recurring liquidity that flips after fills\"\n\nThe agent should:\n1. Recommend `OrderType.Reverse` or `OrderType.ReverseTight`\n2. Explain that reverse orders use `spreadBps` instead of `lastValidSlot`\n3. Use `ReverseTight` when tighter spread precision matters\n4. Mention that cleanup may require `cancelAllOnCoreIx()` rather than only wrapper-level cancellation\n\nCopy-paste oriented examples in this skill:\n\n- `examples/read-market/read-market.ts`\n- `examples/wallet-order/place-order.ts`\n- `examples/global-liquidity/global-order.ts`\n- `examples/reverse-liquidity/amm-style-batch.ts`\n\n## Guidelines\n\n- **DO**: Use `getSetupIxs(...)` before wallet-adapter trading flows.\n- **DO**: Use `getClientReadOnly(...)` for anonymous or pre-setup inspection paths.\n- **DO**: Use `bidsL2()` / `asksL2()` for UI-facing orderbook displays.\n- **DO**: Separate market-local account logic from global-account logic.\n- **DO**: Mention wrapper state, market seats, and global accounts explicitly when relevant.\n- **DON'T**: Assume a connected wallet already has wrapper state or a market seat.\n- **DON'T**: Treat `OrderType.Global` as equivalent to ordinary market-local orders.\n- **DON'T**: Use `cancelAllIx()` as if it always fully cleans up reverse/global edge cases.\n- **DON'T**: Ask for or embed private keys in examples.\n\n## Common Errors\n\n### Error: Read only\n\n**Cause**: A write method was called on a read-only client or without a payer/wrapper context.\n\n**Solution**: Switch to `getClientForMarket(...)` or complete the `getSetupIxs(...)` flow and then use `getClientForMarketNoPrivateKey(...)`.\n\n### Error: Setup still required\n\n**Cause**: Wrapper creation or market seat claim has not been completed.\n\n**Solution**: Run the instructions returned by `ManifestClient.getSetupIxs(...)` before building normal wrapper-based trading actions.\n\n### Error: Global order funded incorrectly\n\n**Cause**: The trader is using `OrderType.Global` without a funded global account for the supporting token.\n\n**Solution**: Run `createGlobalAddTraderIx(...)` if needed, then `globalDepositIx(...)`, and only then place the global order.\n\n### Error: Reverse/global orders remain after cancel-all\n\n**Cause**: Wrapper-level cancellation does not fully cover all core-level order states.\n\n**Solution**: Use `cancelAllOnCoreIx()` when full core cleanup is required.\n\n## References\n\n- Official site: `https://manifest.trade`\n- SDK package: `https://www.npmjs.com/package/@bonasa-tech/manifest-sdk`\n- Source repository: `https://github.com/Bonasa-Tech/manifest`\n- TypeScript client docs: `https://github.com/Bonasa-Tech/manifest/tree/main/client/ts`",
+    "executionFlow": [
+      {
+        "title": "Overview",
+        "content": "Use this skill when the task involves:\n\n- Reading Manifest market state or orderbooks\n- Placing, canceling, depositing, or withdrawing via the Manifest SDK\n- Choosing between local market balances and global balances\n- Handling wrapper setup, seat claims, and wallet-adapter flows\n- Understanding `Limit`, `PostOnly`, `ImmediateOrCancel`, `Global`, `Reverse`, and `ReverseTight` order types\n\nLoad supporting references as needed:\n\n- `resources/manifest-actions.md`\n- `resources/manifest-sdk.md`\n- `docs/troubleshooting.md`\n- `examples/read-market/read-market.ts`\n- `examples/wallet-order/place-order.ts`\n- `examples/global-liquidity/global-order.ts`\n- `examples/reverse-liquidity/amm-style-batch.ts`\n- `templates/manifest-setup.ts`"
+      }
+    ],
+    "landingGuidance": [
+      {
+        "title": "Operational guidance",
+        "content": "- Confirm network, fee, and endpoint assumptions before sending transactions or requests.\n- Prefer the protocol's documented production defaults over generic Solana defaults.\n- Re-fetch official docs if live behavior diverges from the embedded guide."
+      }
+    ],
+    "failureHandling": [
+      {
+        "title": "Fallback handling",
+        "content": "- Validate signer assumptions, addresses, and environment variables before retrying.\n- Simulate or use read-only verification paths before broadcasting changed transactions.\n- Escalate to the protocol's troubleshooting docs when behavior differs from the expected flow."
+      }
+    ]
+  }
+}

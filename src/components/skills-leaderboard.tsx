@@ -57,22 +57,7 @@ export function SkillsLeaderboard({ skills }: { skills: Skill[] }) {
         />
       </div>
 
-      <div className="mt-4 flex flex-wrap gap-2">
-        {feeds.map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            onClick={() => setFeed(item.id)}
-            className={`rounded-full px-3 py-1 text-xs font-medium ${
-              feed === item.id
-                ? "bg-violet-600 text-white"
-                : "border border-zinc-700 text-zinc-300"
-            }`}
-          >
-            {item.label}
-          </button>
-        ))}
-      </div>
+  
 
       <div className="mt-5 overflow-x-auto">
         <table className="w-full min-w-[620px] text-left text-sm">
